@@ -10,13 +10,15 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/0x5d/hash/core"
 	"go.uber.org/zap"
 )
 
 // Server is an HTTP server.
 type Server struct {
-	c   Config
-	Log *zap.Logger
+	c         Config
+	shortener core.Shortener
+	log       *zap.Logger
 }
 
 // Config holds an HTTP server's configuration.
@@ -31,8 +33,8 @@ func DefaultConfig() Config {
 }
 
 // NewServer returns a new Server instance configured with the given Config.
-func NewServer(c Config, log *zap.Logger) *Server {
-	return &Server{c, log}
+func NewServer(c Config, shortener core.Shortener, log *zap.Logger) *Server {
+	return &Server{c: c, shortener: shortener, log: log}
 }
 
 // Start starts the server. It handles shutdown gracefully by not accepting new connections after
@@ -42,12 +44,14 @@ func (s *Server) Start(ctx context.Context) {
 		Addr: s.c.Addr,
 	}
 
+	http.Handle("/url", &urlRouter{&s.shortener})
+
 	go func() {
 		err := server.ListenAndServe()
 		if !errors.Is(err, http.ErrServerClosed) {
-			s.Log.Fatal("HTTP server shutdown unexpectedly", zap.Error(err))
+			s.log.Fatal("HTTP server shutdown unexpectedly", zap.Error(err))
 		}
-		s.Log.Info("HTTP server stopped")
+		s.log.Info("HTTP server stopped")
 	}()
 
 	ch := make(chan os.Signal, 1)
@@ -57,9 +61,9 @@ func (s *Server) Start(ctx context.Context) {
 	shutdownCtx, cancel := context.WithTimeout(ctx, s.c.ShutdownTimeout)
 	defer cancel()
 
-	s.Log.Info("HTTP server Shutting down")
+	s.log.Info("HTTP server Shutting down")
 	err := server.Shutdown(shutdownCtx)
 	if err != nil {
-		s.Log.Fatal("HTTP server failed to shutdown", zap.Error(err))
+		s.log.Fatal("HTTP server failed to shutdown", zap.Error(err))
 	}
 }
