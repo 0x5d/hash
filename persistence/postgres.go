@@ -48,3 +48,19 @@ func (r *PostgresRepository) Update(ctx context.Context, id uint64, newURL *stri
 	_, err := r.conn.Exec(ctx, q, newURL, enabled, id)
 	return err
 }
+
+func (r *PostgresRepository) Get(ctx context.Context, id uint64) (*core.ShortenedURL, error) {
+	q := `select url, enabled
+	from urls
+	where id = $1;`
+	row := r.conn.QueryRow(ctx, q, id)
+	var (
+		url     string
+		enabled bool
+	)
+	err := row.Scan(&url, &enabled)
+	if err != nil {
+		return nil, err
+	}
+	return &core.ShortenedURL{Original: url, Enabled: enabled}, nil
+}
