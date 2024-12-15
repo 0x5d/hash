@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/0x5d/hash/api/http"
+	"github.com/0x5d/hash/cache"
 	"github.com/0x5d/hash/config"
 	"github.com/0x5d/hash/core"
 	"github.com/0x5d/hash/log"
@@ -22,7 +23,11 @@ func main() {
 	if err != nil {
 		logger.Fatal("Failed to start URL repo", zap.Error(err))
 	}
-	urlSvc := core.NewURLService(urlRepo)
+	cache, err := cache.NewRedisCache(ctx, c.Cache)
+	if err != nil {
+		logger.Fatal("Failed to connect to cache", zap.Error(err))
+	}
+	urlSvc := core.NewURLService(logger, urlRepo, cache)
 	s := http.NewServer(c.HTTP, urlSvc, logger.Named("http"))
 	s.Start(ctx)
 }

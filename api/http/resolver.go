@@ -26,7 +26,7 @@ func (r *resolver) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 func (r *resolver) handleGet(res http.ResponseWriter, req *http.Request) {
 	key, _ := shiftPath(req.URL.Path)
 
-	url, err := r.urlSvc.DecodeAndGet(req.Context(), []byte(key))
+	url, err := r.urlSvc.DecodeAndGet(req.Context(), key)
 	if err != nil {
 		errMsg := "Failed to get shortened URL"
 		r.log.Error(errMsg, zap.Error(err), zap.String("key", key))
