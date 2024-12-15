@@ -37,3 +37,11 @@ func (s *URLService) ShortenAndSave(ctx context.Context, url string, enabled boo
 	}
 	return &short, nil
 }
+
+func (s *URLService) DecodeAndGet(ctx context.Context, key []byte) (*ShortenedURL, error) {
+	id, err := base62Decode(key)
+	if err != nil {
+		return nil, err
+	}
+	return s.urlRepo.Get(ctx, id)
+}
