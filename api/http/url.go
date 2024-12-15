@@ -24,7 +24,9 @@ type errResponse struct {
 }
 
 type urlRouter struct {
-	shortener *core.Shortener
+	advertisedAddr string
+	urlSvc         *core.URLService
+	log            *zap.Logger
 }
 
 type urlBody struct {
@@ -62,7 +64,7 @@ func (r *urlRouter) handlePost(res http.ResponseWriter, req *http.Request) {
 	body := http.MaxBytesReader(res, req.Body, bodyLimit)
 	parseJSON(body, &u, res)
 
-	shortened, err := r.shortener.Shorten(u.URL)
+	shortened, err := r.urlSvc.ShortenAndSave(req.Context(), u.URL, u.Enabled)
 	if err != nil {
 		writeErrRes(res, "Failed to shorten URL", http.StatusInternalServerError)
 		return

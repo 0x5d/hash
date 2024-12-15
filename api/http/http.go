@@ -16,14 +16,15 @@ import (
 
 // Server is an HTTP server.
 type Server struct {
-	c         Config
-	shortener core.Shortener
-	log       *zap.Logger
+	c      Config
+	urlSvc core.URLService
+	log    *zap.Logger
 }
 
 // Config holds an HTTP server's configuration.
 type Config struct {
 	Addr            string        `env:"ADDR"`
+	AdvertisedAddr  string        `env:"ADV_ADDR"`
 	ShutdownTimeout time.Duration `env:"SHUTDOWN_TIMEOUT"`
 }
 
@@ -33,8 +34,8 @@ func DefaultConfig() Config {
 }
 
 // NewServer returns a new Server instance configured with the given Config.
-func NewServer(c Config, shortener core.Shortener, log *zap.Logger) *Server {
-	return &Server{c: c, shortener: shortener, log: log}
+func NewServer(c Config, urlSvc core.URLService, log *zap.Logger) *Server {
+	return &Server{c: c, urlSvc: urlSvc, log: log}
 }
 
 // Start starts the server. It handles shutdown gracefully by not accepting new connections after
@@ -44,7 +45,10 @@ func (s *Server) Start(ctx context.Context) {
 		Addr: s.c.Addr,
 	}
 
-	http.Handle("/url", &urlRouter{&s.shortener})
+	http.Handle("/url", &urlRouter{
+		urlSvc: &s.urlSvc,
+		log:    s.log.Named("url"),
+	})
 
 	go func() {
 		err := server.ListenAndServe()

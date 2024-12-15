@@ -7,6 +7,7 @@ import (
 	"github.com/0x5d/hash/config"
 	"github.com/0x5d/hash/core"
 	"github.com/0x5d/hash/log"
+	"github.com/0x5d/hash/persistence"
 	"go.uber.org/zap"
 )
 
@@ -17,7 +18,8 @@ func main() {
 	if err != nil {
 		logger.Fatal("Failed to load config from env", zap.Error(err))
 	}
-	shortener := core.NewShortener(c.Core)
-	s := http.NewServer(c.HTTP, shortener, logger)
+	urlRepo, err := persistence.NewPGURLRepo(ctx, c.DB)
+	urlSvc := core.NewURLService(urlRepo)
+	s := http.NewServer(c.HTTP, urlSvc, logger)
 	s.Start(ctx)
 }
