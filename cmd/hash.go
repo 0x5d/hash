@@ -19,6 +19,9 @@ func main() {
 		logger.Fatal("Failed to load config from env", zap.Error(err))
 	}
 	urlRepo, err := persistence.NewPGURLRepo(ctx, c.DB)
+	if err != nil {
+		logger.Fatal("Failed to start URL repo", zap.Error(err))
+	}
 	urlSvc := core.NewURLService(urlRepo)
 	s := http.NewServer(c.HTTP, urlSvc, logger)
 	s.Start(ctx)
