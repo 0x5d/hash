@@ -2,6 +2,7 @@ package core
 
 import (
 	"fmt"
+	"regexp"
 )
 
 const (
@@ -11,6 +12,7 @@ const (
 )
 
 var set = []byte("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+var invalidChars = regexp.MustCompile(`[^a-zA-Z0-9]+`)
 
 // Adapted from https://dev.to/joshduffney/what-is-base62-conversion-13o0.
 func base62Encode(n uint64) []byte {
@@ -26,11 +28,14 @@ func base62Encode(n uint64) []byte {
 	return base62
 }
 
-func base62Decode(str []byte) uint64 {
+func base62Decode(str []byte) (uint64, error) {
 	var n uint64
 	var (
 		num int
 	)
+	if invalidChars.Match(str) {
+		return 0, fmt.Errorf("%q contains invalid chars", string(str))
+	}
 	for i, b := range str {
 		if b >= 'a' {
 			num = lowercaseStart + int(b-'a')
@@ -40,10 +45,9 @@ func base62Decode(str []byte) uint64 {
 			num = numericStart + int(b-'0')
 		}
 		v := uint64(num * pow(62, i))
-		fmt.Println(v)
 		n += v
 	}
-	return n
+	return n, nil
 }
 
 func pow(b, e int) int {
