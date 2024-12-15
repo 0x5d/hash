@@ -3,10 +3,15 @@ package http
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"os/signal"
+	"path"
+	"strings"
 	"syscall"
 	"time"
 
@@ -21,11 +26,8 @@ type Server struct {
 	log    *zap.Logger
 }
 
-// Config holds an HTTP server's configuration.
-type Config struct {
-	Addr            string        `env:"ADDR"`
-	AdvertisedAddr  string        `env:"ADV_ADDR"`
-	ShutdownTimeout time.Duration `env:"SHUTDOWN_TIMEOUT"`
+type errResponse struct {
+	Msg string `json:"msg"`
 }
 
 // DefaultConfig returns a Config with default values.
@@ -46,8 +48,9 @@ func (s *Server) Start(ctx context.Context) {
 	}
 
 	http.Handle("/url", &urlRouter{
-		urlSvc: &s.urlSvc,
-		log:    s.log.Named("url"),
+		advertisedAddr: s.c.AdvertisedAddr,
+		urlSvc:         &s.urlSvc,
+		log:            s.log.Named("url"),
 	})
 
 	go func() {
@@ -70,4 +73,43 @@ func (s *Server) Start(ctx context.Context) {
 	if err != nil {
 		s.log.Fatal("HTTP server failed to shutdown", zap.Error(err))
 	}
+}
+
+func shiftPath(p string) (head, tail string) {
+	p = path.Clean(slash + p)
+	i := strings.Index(p[1:], slash) + 1
+	if i <= 0 {
+		return p[1:], slash
+	}
+	return p[1:i], p[i:]
+}
+
+func parseJSON(log *zap.Logger, res http.ResponseWriter, body io.ReadCloser, v any) error {
+	err := json.NewDecoder(body).Decode(&v)
+	if err == nil {
+		return nil
+	}
+
+	switch {
+	case errors.Is(err, &http.MaxBytesError{}):
+		errMsg := fmt.Sprintf("Request body should be under %dB", bodyLimit)
+		log.Warn(errMsg, zap.Error(err))
+		writeErrRes(res, errMsg, http.StatusRequestEntityTooLarge)
+	default:
+		errMsg := "Invalid JSON"
+		log.Warn(errMsg, zap.Error(err))
+		writeErrRes(res, "Invalid JSON", http.StatusBadRequest)
+	}
+	return err
+}
+
+func writeErrRes(res http.ResponseWriter, msg string, status int) {
+	errRes := errResponse{Msg: msg}
+	r, err := json.Marshal(&errRes)
+	if err != nil {
+		http.Error(res, "Failed to encode response.", http.StatusInternalServerError)
+		return
+	}
+	res.Header().Add("Content-Type", "application/json")
+	http.Error(res, string(r), status)
 }
