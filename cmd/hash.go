@@ -23,6 +23,6 @@ func main() {
 		logger.Fatal("Failed to start URL repo", zap.Error(err))
 	}
 	urlSvc := core.NewURLService(urlRepo)
-	s := http.NewServer(c.HTTP, urlSvc, logger)
+	s := http.NewServer(c.HTTP, urlSvc, logger.Named("http"))
 	s.Start(ctx)
 }
