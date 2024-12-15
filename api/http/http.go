@@ -53,6 +53,11 @@ func (s *Server) Start(ctx context.Context) {
 		log:            s.log.Named("url"),
 	})
 
+	http.Handle("/", &resolver{
+		urlSvc: &s.urlSvc,
+		log:    s.log.Named("resolver"),
+	})
+
 	go func() {
 		err := server.ListenAndServe()
 		if !errors.Is(err, http.ErrServerClosed) {
