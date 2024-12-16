@@ -5,7 +5,7 @@ import "time"
 type Config struct {
 	Address      string        `env:"ADDR"`
 	Password     string        `env:"PASS"`
-	TTL          time.Duration `env:"DEFAULT_TTL"`
+	TTL          time.Duration `env:"TTL"`
 	ReadTimeout  time.Duration `env:"READ_TIMEOUT"`
 	WriteTimeout time.Duration `env:"WRITE_TIMEOUT"`
 }
