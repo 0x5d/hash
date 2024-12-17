@@ -88,7 +88,6 @@ func (r *urlRouter) handlePost(res http.ResponseWriter, req *http.Request) {
 		writeErrRes(res, errMsg, http.StatusInternalServerError)
 		return
 	}
-	res.WriteHeader(http.StatusCreated)
 	bs, err := json.Marshal(shortenedURLResponse(shortened, r.advertisedAddr))
 	if err != nil {
 		errMsg := "Failed to encode response"
@@ -96,6 +95,7 @@ func (r *urlRouter) handlePost(res http.ResponseWriter, req *http.Request) {
 		writeErrRes(res, errMsg, http.StatusInternalServerError)
 		return
 	}
+	res.WriteHeader(http.StatusCreated)
 	res.Write(bs)
 }
 
