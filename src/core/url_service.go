@@ -2,6 +2,7 @@ package core
 
 import (
 	"context"
+	"fmt"
 	neturl "net/url"
 
 	"go.uber.org/zap"
@@ -19,15 +20,28 @@ type ShortenedURL struct {
 	Enabled  bool
 }
 
+type ErrNotFound struct{}
+
+func (e *ErrNotFound) Error() string {
+	return "URL not found"
+}
+
+type ErrInvalidURL struct {
+	URL string
+}
+
+func (e *ErrInvalidURL) Error() string {
+	return fmt.Sprintf("invalid URL %q", e.URL)
+}
+
 func NewURLService(log *zap.Logger, urlRepo URLRepository, cache Cache) URLService {
 	return URLService{urlRepo: urlRepo, cache: cache, log: log}
 }
 
 func (s *URLService) ShortenAndSave(ctx context.Context, url string, enabled bool) (*ShortenedURL, error) {
-	// TODO: create specific errors.
 	_, err := neturl.Parse(url)
 	if err != nil {
-		return nil, err
+		return nil, &ErrInvalidURL{url}
 	}
 	id, err := s.urlRepo.NextID(ctx)
 	if err != nil {

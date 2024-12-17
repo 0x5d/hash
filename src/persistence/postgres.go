@@ -2,8 +2,10 @@ package persistence
 
 import (
 	"context"
+	"errors"
 
 	"github.com/0x5d/hash/core"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -47,6 +49,9 @@ func (r *PostgresRepository) Update(ctx context.Context, id uint64, newURL *stri
 		en  bool
 	)
 	err := r.conn.QueryRow(ctx, q, newURL, enabled, id).Scan(&url, &en)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, &core.ErrNotFound{}
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -57,12 +62,14 @@ func (r *PostgresRepository) Get(ctx context.Context, id uint64) (*core.Shortene
 	q := `select url, enabled
 	from urls
 	where id = $1;`
-	row := r.conn.QueryRow(ctx, q, id)
 	var (
 		url     string
 		enabled bool
 	)
-	err := row.Scan(&url, &enabled)
+	err := r.conn.QueryRow(ctx, q, id).Scan(&url, &enabled)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, &core.ErrNotFound{}
+	}
 	if err != nil {
 		return nil, err
 	}
