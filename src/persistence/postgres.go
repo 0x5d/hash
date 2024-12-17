@@ -36,17 +36,21 @@ func (r *PostgresRepository) Create(ctx context.Context, url core.ShortenedURL) 
 	return err
 }
 
-func (r *PostgresRepository) Update(ctx context.Context, id uint64, newURL *string, enabled *bool) error {
+func (r *PostgresRepository) Update(ctx context.Context, id uint64, newURL *string, enabled *bool) (*core.ShortenedURL, error) {
 	q := `update urls set
-    url = coalesce($1, url),
-    enabled = coalesce($2, enabled),
+    url = coalesce($1::text, url),
+    enabled = coalesce($2::boolean, enabled)
 	where id = $3
-	and  (
-		$1 is not null $1 is distinct from url or
-		$2 is not null $2 is distinct from enabled
-	);`
-	_, err := r.conn.Exec(ctx, q, newURL, enabled, id)
-	return err
+	returning url, enabled;`
+	var (
+		url string
+		en  bool
+	)
+	err := r.conn.QueryRow(ctx, q, newURL, enabled, id).Scan(&url, &en)
+	if err != nil {
+		return nil, err
+	}
+	return &core.ShortenedURL{Original: url, Enabled: en}, nil
 }
 
 func (r *PostgresRepository) Get(ctx context.Context, id uint64) (*core.ShortenedURL, error) {
