@@ -26,12 +26,18 @@ type urlBody struct {
 	Enabled bool   `json:"enabled"`
 }
 
+type urlUpdateBody struct {
+	URL     *string `json:"url"`
+	Enabled *bool   `json:"enabled"`
+}
+
 type urlResponse struct {
 	Shortened string `json:"shortened"`
 	Enabled   bool   `json:"enabled"`
 }
 
 func (r *urlRouter) ServeHTTP(res http.ResponseWriter, req *http.Request) {
+	_, req.URL.Path = shiftPath(req.URL.Path)
 	switch req.Method {
 	case http.MethodGet:
 		r.handleGet(res, req)
@@ -80,12 +86,28 @@ func (r *urlRouter) handlePost(res http.ResponseWriter, req *http.Request) {
 }
 
 func (r *urlRouter) handlePut(res http.ResponseWriter, req *http.Request) {
-	idStr, _ := shiftPath(req.URL.Path)
-	_, err := strconv.Atoi(idStr)
+	key, _ := shiftPath(req.URL.Path)
+	body := http.MaxBytesReader(res, req.Body, bodyLimit)
+	var update urlUpdateBody
+	err := parseJSON(r.log, res, body, &update)
 	if err != nil {
-		http.Error(res, "URL ID must be an integer", http.StatusBadRequest)
 		return
 	}
+	shortened, err := r.urlSvc.Update(req.Context(), key, update.URL, update.Enabled)
+	if err != nil {
+		errMsg := "Failed to update URL"
+		r.log.Error(errMsg, zap.Error(err))
+		writeErrRes(res, errMsg, http.StatusInternalServerError)
+		return
+	}
+	bs, err := json.Marshal(shortenedURLResponse(shortened, r.advertisedAddr))
+	if err != nil {
+		errMsg := "Failed to encode response"
+		r.log.Error(errMsg, zap.Error(err))
+		writeErrRes(res, errMsg, http.StatusInternalServerError)
+		return
+	}
+	res.Write(bs)
 }
 
 func shortenedURLResponse(url *core.ShortenedURL, advAddr string) *urlResponse {

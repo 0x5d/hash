@@ -47,7 +47,7 @@ func (s *Server) Start(ctx context.Context) {
 		Addr: s.c.Addr,
 	}
 
-	http.Handle("/url", &urlRouter{
+	http.Handle("/url/{x...}", &urlRouter{
 		advertisedAddr: s.c.AdvertisedAddr,
 		urlSvc:         &s.urlSvc,
 		log:            s.log.Named("url"),
