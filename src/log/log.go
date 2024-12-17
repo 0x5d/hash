@@ -18,6 +18,7 @@ const (
 
 // Config encapsulates the logging config.
 type Config struct {
+	// The logging level.
 	Level string `env:"LEVEL"`
 }
 

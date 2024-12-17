@@ -3,10 +3,15 @@ package cache
 import "time"
 
 type Config struct {
-	Address      string        `env:"ADDR"`
-	Password     string        `env:"PASS"`
-	TTL          time.Duration `env:"TTL"`
-	ReadTimeout  time.Duration `env:"READ_TIMEOUT"`
+	// The cache address.
+	Address string `env:"ADDR"`
+	// The cache password.
+	Password string `env:"PASS"`
+	// The cached objects' time-to-live.
+	TTL time.Duration `env:"TTL"`
+	// The timeout when reading from the cache.
+	ReadTimeout time.Duration `env:"READ_TIMEOUT"`
+	// The timeout when writing to the cache.
 	WriteTimeout time.Duration `env:"WRITE_TIMEOUT"`
 }
 

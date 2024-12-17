@@ -11,12 +11,17 @@ import (
 )
 
 type Config struct {
-	HTTP  http.Config        `env:", prefix=HTTP_"`
-	DB    persistence.Config `env:", prefix=DB_"`
-	Log   log.Config         `env:", prefix=LOG_"`
-	Cache cache.Config       `env:", prefix=CACHE_"`
+	// The HTTP server/ API config.
+	HTTP http.Config `env:", prefix=HTTP_"`
+	// The database config.
+	DB persistence.Config `env:", prefix=DB_"`
+	// The logging config.
+	Log log.Config `env:", prefix=LOG_"`
+	// The cache config.
+	Cache cache.Config `env:", prefix=CACHE_"`
 }
 
+// Loads the config from the fields' respective env vars.
 func LoadFromEnv(ctx context.Context) (Config, error) {
 	c := Config{
 		HTTP:  http.DefaultConfig(),
