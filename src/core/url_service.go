@@ -63,6 +63,27 @@ func (s *URLService) DecodeAndGet(ctx context.Context, key string) (*ShortenedUR
 	return short, nil
 }
 
+func (s *URLService) Update(ctx context.Context, key string, newURL *string, enabled *bool) (*ShortenedURL, error) {
+	id, err := base62Decode([]byte(key))
+	if err != nil {
+		return nil, err
+	}
+	short, err := s.urlRepo.Update(ctx, id, newURL, enabled)
+	if err != nil {
+		return nil, err
+	}
+	short.ShortKey = key
+	if short.Enabled {
+		s.setAsync(key, short.Original)
+	} else {
+		err = s.cache.Del(ctx, key)
+		if err != nil {
+			s.log.Warn("error while deleting key from cache", zap.Error(err))
+		}
+	}
+	return short, nil
+}
+
 func (s *URLService) setAsync(key, url string) {
 	go func() {
 		err := s.cache.Set(context.Background(), key, url)
