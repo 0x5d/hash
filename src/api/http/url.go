@@ -2,9 +2,9 @@ package http
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/0x5d/hash/core"
 	"go.uber.org/zap"
@@ -51,12 +51,26 @@ func (r *urlRouter) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 }
 
 func (r *urlRouter) handleGet(res http.ResponseWriter, req *http.Request) {
-	idStr, _ := shiftPath(req.URL.Path)
-	_, err := strconv.Atoi(idStr)
-	if err != nil {
-		http.Error(res, "URL ID must be an integer", http.StatusBadRequest)
+	key, _ := shiftPath(req.URL.Path)
+	shortened, err := r.urlSvc.DecodeAndGet(req.Context(), key)
+	if errors.Is(err, &core.ErrNotFound{}) {
+		writeErrRes(res, fmt.Sprintf("URL with key %s not found", key), http.StatusNotFound)
 		return
 	}
+	if err != nil {
+		errMsg := "Failed to get URL"
+		r.log.Error(errMsg, zap.Error(err))
+		writeErrRes(res, errMsg, http.StatusInternalServerError)
+		return
+	}
+	bs, err := json.Marshal(shortenedURLResponse(shortened, r.advertisedAddr))
+	if err != nil {
+		errMsg := "Failed to encode response"
+		r.log.Error(errMsg, zap.Error(err))
+		writeErrRes(res, errMsg, http.StatusInternalServerError)
+		return
+	}
+	res.Write(bs)
 }
 
 func (r *urlRouter) handlePost(res http.ResponseWriter, req *http.Request) {
