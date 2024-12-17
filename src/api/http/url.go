@@ -46,7 +46,7 @@ func (r *urlRouter) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	case http.MethodPut:
 		r.handlePut(res, req)
 	default:
-		http.Error(res, fmt.Sprintf("%q isn't allowed on URL resources", req.Method), http.StatusMethodNotAllowed)
+		writeErrRes(res, fmt.Sprintf("%q not allowed", req.Method), http.StatusMethodNotAllowed)
 	}
 }
 

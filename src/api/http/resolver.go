@@ -19,7 +19,7 @@ func (r *resolver) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	case http.MethodGet:
 		r.handleGet(res, req)
 	default:
-		http.Error(res, fmt.Sprintf("%q not allowed", req.Method), http.StatusMethodNotAllowed)
+		writeErrRes(res, fmt.Sprintf("%q not allowed", req.Method), http.StatusMethodNotAllowed)
 	}
 }
 
