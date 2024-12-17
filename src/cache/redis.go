@@ -41,3 +41,9 @@ func (r *RedisCache) Get(ctx context.Context, key string) (string, error) {
 	}
 	return url, nil
 }
+
+func (r *RedisCache) Del(ctx context.Context, key string) error {
+	ctx, cancel := context.WithTimeout(ctx, r.c.WriteTimeout)
+	defer cancel()
+	return r.cl.Del(ctx, key).Err()
+}
