@@ -11,8 +11,3 @@ create table if not exists urls(
   short_key varchar(2048) not null,
   enabled boolean not null default true
 );
-
----- create above / drop below ----
-
-drop table url_ids;
-drop table urls;
