@@ -1,1 +1,4 @@
 hash
+.terraform
+*.tfvars
+*.tfstate*
