@@ -23,7 +23,7 @@ A continuación propongo una aproximación iterativa a la construcción del sist
 
 > Esta propuesta habla de los componentes del sistema, mas no de la plataforma. Si una organización tiene ya una infraestructura establecida de, por ejemplo, Kubernetes, los componentes descritos aquí podrían ser desplegados allí. De lo contrario, también se desplegar utilizando máquinas virtuales "dedicadas" y servicios ofrecidos por la nube de elección (p. ej. RDS en AWS, CloudSQL en GCP, etc.).
 
-![diagram](static/phase_2.png)
+![diagram](static/diagram.png)
 
 Esta arquitectura busca atender los requisitos, pero también ser _future proof_.
 
